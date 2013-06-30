@@ -105,6 +105,7 @@ sub fileparse {
   my($fullname,@suffices) = @_;
 
   unless (defined $fullname) {
+print STDERR "X001\n";
       require Carp;
       Carp::croak("fileparse(): need a valid pathname");
   }
@@ -144,8 +145,10 @@ sub fileparse {
     $dirpath ||= '';  # should always be defined
   }
   else { # Default to Unix semantics.
+print STDERR "X002\n";
     ($dirpath,$basename) = ($fullname =~ m{^(.*/)?(.*)}s);
-    if ($orig_type eq 'VMS' and $fullname =~ m{^(/[^/]+/000000(/|$))(.*)}) {
+    if ($orig_type eq 'VMS' and $fullname =~ m{^(/[^/]+/000000(/|$))(.*)}) {    #/
+print STDERR "X003\n";
       # dev:[000000] is top of VMS tree, similar to Unix '/'
       # so strip it off and treat the rest as "normal"
       my $devspec  = $1;
@@ -154,16 +157,22 @@ sub fileparse {
       $dirpath ||= '';  # should always be defined
       $dirpath = $devspec.$dirpath;
     }
-    $dirpath = './' unless $dirpath;
+#    $dirpath = './' unless $dirpath;
+    unless ($dirpath) {
+print STDERR "X004\n";
+     $dirpath = './';
+    }
   }
 
 
   my $tail   = '';
   my $suffix = '';
   if (@suffices) {
+print STDERR "X005\n";
     foreach $suffix (@suffices) {
       my $pat = ($igncase ? '(?i)' : '') . "($suffix)\$";
       if ($basename =~ s/$pat//s) {
+print STDERR "X006\n";
         $taint .= substr($suffix,0,0);
         $tail = $1 . $tail;
       }
@@ -225,11 +234,13 @@ sub basename {
   # The suffix is not stripped if it is identical to the remaining 
   # characters in string.
   if( length $suffix and !length $basename ) {
+print STDERR "X007\n";
       $basename = $suffix;
   }
 
   # Ensure that basename '/' == '/'
   if( !length $basename ) {
+print STDERR "X008\n";
       $basename = $dirname;
   }
 
@@ -297,11 +308,11 @@ sub dirname {
         $dirname ||= $ENV{DEFAULT};
     }
     elsif ($type eq 'MacOS') {
-	if( !length($basename) && $dirname !~ /^[^:]+:\z/) {
-            _strip_trailing_sep($dirname);
-	    ($basename,$dirname) = fileparse $dirname;
-	}
-	$dirname .= ":" unless $dirname =~ /:\z/;
+    	if( !length($basename) && $dirname !~ /^[^:]+:\z/) {
+                _strip_trailing_sep($dirname);
+    	    ($basename,$dirname) = fileparse $dirname;
+    	}
+    	$dirname .= ":" unless $dirname =~ /:\z/;
     }
     elsif (grep { $type eq $_ } qw(MSDOS DOS MSWin32 OS2)) { 
         _strip_trailing_sep($dirname);
@@ -318,9 +329,10 @@ sub dirname {
     else {
         _strip_trailing_sep($dirname);
         unless( length($basename) ) {
-	    ($basename,$dirname) = fileparse $dirname;
-	    _strip_trailing_sep($dirname);
-	}
+print STDERR "X008\n";
+	        ($basename,$dirname) = fileparse $dirname;
+	        _strip_trailing_sep($dirname);
+	    }
     }
 
     $dirname;
@@ -338,6 +350,7 @@ sub _strip_trailing_sep  {
         $_[0] =~ s/([^:])[\\\/]*\z/$1/;
     }
     else {
+print STDERR "X009\n";
         $_[0] =~ s{(.)/*\z}{$1}s;
     }
 }
@@ -377,14 +390,29 @@ sub fileparse_set_fstype {
     my $old = $Fileparse_fstype;
 
     if (@_) {
+print STDERR "X010\n";
         my $new_type = shift;
 
         $Fileparse_fstype = 'Unix';  # default
         foreach my $type (@Types) {
-            $Fileparse_fstype = $type if $new_type =~ /^$type/i;
+#            $Fileparse_fstype = $type if $new_type =~ /^$type/i;
+            if ($new_type =~ /^$type/i) {
+print STDERR "X011\n";
+                 $Fileparse_fstype = $type;
+            }
         }
 
-        $Fileparse_igncase = 
+#        $Fileparse_igncase = 
+#          (grep $Fileparse_fstype eq $_, @Ignore_Case) ? 1 : 0;
+        if (grep $Fileparse_fstype eq $_, @Ignore_Case) {
+print STDERR "X012\n";
+            $Fileparse_igncase = 1;
+        }
+        else {
+print STDERR "X013\n";
+            $Fileparse_igncase = 0;
+        }
+        
           (grep $Fileparse_fstype eq $_, @Ignore_Case) ? 1 : 0;
     }
 
