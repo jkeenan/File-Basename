@@ -156,7 +156,7 @@ sub fileparse {
     }
     $dirpath = './' unless $dirpath;
   }
-      
+
 
   my $tail   = '';
   my $suffix = '';
@@ -227,7 +227,7 @@ sub basename {
   if( length $suffix and !length $basename ) {
       $basename = $suffix;
   }
-  
+
   # Ensure that basename '/' == '/'
   if( !length $basename ) {
       $basename = $dirname;
